@@ -1,44 +1,29 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
-import streamlit as st
+# Second
+import streamlit as st import anthropic
+with st.sidebar:
+    anthropic_api_key = st.text_input("Anthropic API Key", key="file_qa_api_key", type="password")
+    "[View the source code](https://github.com/streamlit/llm-examples/blob/main/pages/1_File_Q%26A.py)"
+    "[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/llm-examples?quickstart=1)"
 
-"""
-# Welcome to Streamlit!
+st.title("📝 File Q&A with Anthropic") uploaded_file = st.file_uploader("Upload an article", type=("txt", "md")) question = st.text_input(
+    "Ask something about the article",
+    placeholder="Can you give me a short summary?",
+    disabled=not uploaded_file,
+)
+if uploaded_file and question and not anthropic_api_key:
+    st.info("Please add your Anthropic API key to continue.")
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
+if uploaded_file and question and anthropic_api_key:
+    article = uploaded_file.read().decode()
+    prompt = f"""{anthropic.HUMAN_PROMPT} Here's an article:\n\n
+    {article}\n\n\n\n{question}{anthropic.AI_PROMPT}"""
 
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
-
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
- 
-st.write("""
-# My first app
-Hello *world!*
-""")
-
-st.title("📝 File Q&A with Anthropic") 
-
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
-
-    Point = namedtuple('Point', 'x y')
-    data = []
-
-    points_per_turn = total_points / num_turns
-
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
-
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+    client = anthropic.Client(api_key=anthropic_api_key)
+    response = client.completions.create(
+        prompt=prompt,
+        stop_sequences=[anthropic.HUMAN_PROMPT],
+        model="claude-v1", #"claude-2" for Claude 2 model
+        max_tokens_to_sample=100,
+    )
+    st.write("### Answer")
+    st.write(response.completion)
