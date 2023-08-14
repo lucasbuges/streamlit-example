@@ -19,9 +19,8 @@ st.write("""
 # My first app
 Hello *world!*
 """)
- 
-df = pd.read_csv("my_data.csv")
-st.line_chart(df)
+
+st.title("📝 File Q&A with Anthropic") 
 
 with st.echo(code_location='below'):
     total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
